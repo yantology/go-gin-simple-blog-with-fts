@@ -1,4 +1,4 @@
-package jwt_config
+package jwtconfig
 
 import (
 	"os"

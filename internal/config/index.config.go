@@ -4,86 +4,86 @@ import (
 	"database/sql"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yantology/go-gin-simple-blog-with-fts/internal/config/app_config"
-	"github.com/yantology/go-gin-simple-blog-with-fts/internal/config/cors_config"
-	"github.com/yantology/go-gin-simple-blog-with-fts/internal/config/db_config"
-	"github.com/yantology/go-gin-simple-blog-with-fts/internal/config/jwt_config"
+	"github.com/yantology/go-gin-simple-blog-with-fts/internal/config/appconfig"
+	"github.com/yantology/go-gin-simple-blog-with-fts/internal/config/corsconfig"
+	"github.com/yantology/go-gin-simple-blog-with-fts/internal/config/dbconfig"
+	"github.com/yantology/go-gin-simple-blog-with-fts/internal/config/jwtconfig"
 )
 
 func InitConfig() {
-	app_config.InitAppConfig()
-	db_config.InitDatabaseConfig()
-	db_config.ConnectDatabase(sql.Open)
-	jwt_config.InitJWTConfig()
+	appconfig.InitAppConfig()
+	dbconfig.InitDatabaseConfig()
+	dbconfig.ConnectDatabase(sql.Open)
+	jwtconfig.InitJWTConfig()
 }
 
-// variable app_config
+// variable appconfig
 // var (
-// 	PORT             = app_config.PORT
-// 	PUBLIC_ROUTE      = app_config.PUBLIC_ROUTE
-// 	PUBLIC_ASSETS_DIR = &app_config.PUBLIC_ASSETS_DIR
+// 	PORT             = appconfig.PORT
+// 	PUBLIC_ROUTE      = appconfig.PUBLIC_ROUTE
+// 	PUBLIC_ASSETS_DIR = &appconfig.PUBLIC_ASSETS_DIR
 // )
 
 func PORT() string {
-	return app_config.PORT
+	return appconfig.PORT
 }
 
 func PUBLIC_ROUTE() string {
-	return app_config.PUBLIC_ROUTE
+	return appconfig.PUBLIC_ROUTE
 }
 
 func PUBLIC_ASSETS_DIR() string {
-	return app_config.PUBLIC_ASSETS_DIR
+	return appconfig.PUBLIC_ASSETS_DIR
 }
 
-// variable db_config
+// variable dbconfig
 
 func DB_DRIVER() string {
-	return db_config.DB_DRIVER
+	return dbconfig.DB_DRIVER
 }
 
 func DB_USER() string {
-	return db_config.DB_USER
+	return dbconfig.DB_USER
 }
 
 func DB_PASSWORD() string {
-	return db_config.DB_PASSWORD
+	return dbconfig.DB_PASSWORD
 }
 
 func DB_NAME() string {
-	return db_config.DB_NAME
+	return dbconfig.DB_NAME
 }
 
 func DB_HOST() string {
-	return db_config.DB_HOST
+	return dbconfig.DB_HOST
 }
 
 func DB_PORT() string {
-	return db_config.DB_PORT
+	return dbconfig.DB_PORT
 }
 
 func DB() *sql.DB {
-	return db_config.DB
+	return dbconfig.DB
 }
 
-// variable cors_config
+// variable corsconfig
 func CORS_ALLOW_ORIGINS() gin.HandlerFunc {
-	return cors_config.CorsConfig()
+	return corsconfig.CorsConfig()
 }
 
-// variable jwt_config
+// variable jwtconfig
 func JWT_ACCESS_SECRET() string {
-	return jwt_config.JWT_ACCESS_SECRET
+	return jwtconfig.JWT_ACCESS_SECRET
 }
 
 func JWT_REFRESH_SECRET() string {
-	return jwt_config.JWT_REFRESH_SECRET
+	return jwtconfig.JWT_REFRESH_SECRET
 }
 
 func JWT_ACCESS_TIMEOUT() int {
-	return jwt_config.JWT_ACCESS_TIMEOUT
+	return jwtconfig.JWT_ACCESS_TIMEOUT
 }
 
 func JWT_REFRESH_TIMEOUT() int {
-	return jwt_config.JWT_REFRESH_TIMEOUT
+	return jwtconfig.JWT_REFRESH_TIMEOUT
 }

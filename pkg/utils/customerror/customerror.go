@@ -6,6 +6,15 @@ type CustomError struct {
 	Original error
 }
 
+// NewCustomError creates a new custom error
+func NewCustomError(original error, message string, httpCode int) *CustomError {
+	return &CustomError{
+		HTTPCode: httpCode,
+		Message:  message,
+		Original: original,
+	}
+}
+
 // Error implements the error interface
 func (ce *CustomError) Error() string {
 	return ce.Message

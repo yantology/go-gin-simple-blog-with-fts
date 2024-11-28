@@ -3,6 +3,7 @@ package articlesrepository
 import (
 	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/interfaces/articlesinterface"
 	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/models/articlesmodels"
+	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/utils/customerror"
 )
 
 // ArticlesRepository provides methods to interact with the articles service
@@ -35,8 +36,19 @@ func NewArticlesRepository(service articlesinterface.ArticleRepository) *Article
 //	  UpdatedAt: time.Time{2024-01-20}
 //	}, nil)
 //	Error: (nil, Error) - Article not found
-func (r *ArticlesRepository) GetArticleByID(id int) (*articlesmodels.Article, error) {
+func (r *ArticlesRepository) GetArticleByID(id int) (*articlesmodels.Article, *customerror.CustomError) {
 	return r.service.GetArticleByID(id)
+}
+
+// GetArticlesByUserID retrieves all articles created by a specific user.
+// Parameters:
+//   - userID: The unique identifier of the user whose articles are to be retrieved
+//
+// Returns:
+//   - A slice of articles created by the specified user
+//   - A custom error if the operation fails
+func (r *ArticlesRepository) GetArticlesByUserID(userID int) ([]*articlesmodels.Article, *customerror.CustomError) {
+	return r.service.GetArticlesByUserID(userID)
 }
 
 // GetAllArticles retrieves all available articles
@@ -47,7 +59,7 @@ func (r *ArticlesRepository) GetArticleByID(id int) (*articlesmodels.Article, er
 //	  {ID: 2, Title: "Second Post"}
 //	}, nil)
 //	Error: (nil, error) - Database errors
-func (r *ArticlesRepository) GetAllArticles() ([]*articlesmodels.Article, error) {
+func (r *ArticlesRepository) GetAllArticles() ([]*articlesmodels.Article, *customerror.CustomError) {
 	return r.service.GetAllArticles()
 }
 
@@ -64,32 +76,34 @@ func (r *ArticlesRepository) GetAllArticles() ([]*articlesmodels.Article, error)
 //	  {ID: 5, Title: "Go Programming", Content: "..."}
 //	}, nil)
 //	Error: (nil, error) - Search/DB errors
-func (r *ArticlesRepository) SearchArticles(limit, offset int, query string) ([]*articlesmodels.Article, error) {
+func (r *ArticlesRepository) SearchArticles(limit, offset int, query string) ([]*articlesmodels.Article, *customerror.CustomError) {
 	return r.service.SearchArticles(limit, offset, query)
 }
 
-// CreateArticle creates a new article
+// CreateArticle creates a new article in the database.
 // Parameters:
-//   - article: *Article - Article data to create
+//   - userId: The ID of the user creating the article
+//   - title: The title of the article
+//   - content: The content of the article
 //
 // Returns:
-//
-//	Success: (nil)
-//	Error: (error) - Validation/DB errors
-func (r *ArticlesRepository) CreateArticle(article *articlesmodels.Article) error {
-	return r.service.CreateArticle(article)
+//   - nil if the creation was successful
+//   - a custom error if there are validation or database errors
+func (r *ArticlesRepository) CreateArticle(userId int, title string, content string) *customerror.CustomError {
+	return r.service.CreateArticle(userId, title, content)
 }
 
-// UpdateArticle modifies an existing article
+// UpdateArticle modifies an existing article in the database.
 // Parameters:
-//   - article: *Article - Updated article data
+//   - articleId: The unique identifier of the article to update
+//   - title: The new title for the article
+//   - content: The new content for the article
 //
 // Returns:
-//
-//	Success: (nil)
-//	Error: (error) - Not found/validation errors
-func (r *ArticlesRepository) UpdateArticle(article *articlesmodels.Article) error {
-	return r.service.UpdateArticle(article)
+//   - nil if the update was successful
+//   - a custom error if the article is not found or there are validation errors
+func (r *ArticlesRepository) UpdateArticle(articleId int, title string, content string) *customerror.CustomError {
+	return r.service.UpdateArticle(articleId, title, content)
 }
 
 // DeleteArticleByID removes an article by ID
@@ -100,6 +114,6 @@ func (r *ArticlesRepository) UpdateArticle(article *articlesmodels.Article) erro
 //
 //	Success: (nil)
 //	Error: (error) - Not found/DB errors
-func (r *ArticlesRepository) DeleteArticleByID(id int) error {
+func (r *ArticlesRepository) DeleteArticleByID(id int) *customerror.CustomError {
 	return r.service.DeleteArticleByID(id)
 }

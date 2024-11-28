@@ -1,4 +1,4 @@
-package cors_config
+package corsconfig
 
 import (
 	"os"

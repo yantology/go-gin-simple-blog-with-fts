@@ -3,6 +3,7 @@ package authrepository
 import (
 	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/interfaces/authinterface"
 	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/models/authmodels"
+	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/utils/customerror"
 )
 
 // AuthRepository provides methods to interact with the authentication service.
@@ -22,12 +23,14 @@ func NewAuthRepository(service authinterface.AuthInterface) *AuthRepository {
 
 // CreateUser delegates user creation to the underlying service.
 // Parameters:
-//   - req: CreateUserRequest containing username, email, and password
+//   - username: unique identifier for the user
+//   - email: user's email address
+//   - password: user's password credential
 //
 // Returns:
-//   - error: nil if creation successful, otherwise contains error details
-func (r *AuthRepository) CreateUser(req *authmodels.CreateUserRequest) error {
-	return r.service.CreateUser(req)
+//   - *customerror.CustomError: nil if successful, error details if failed
+func (r *AuthRepository) CreateUser(username string, email string, password string) *customerror.CustomError {
+	return r.service.CreateUser(username, email, password)
 }
 
 // GetUserByEmail delegates email lookup to the underlying service.
@@ -37,17 +40,17 @@ func (r *AuthRepository) CreateUser(req *authmodels.CreateUserRequest) error {
 // Returns:
 //   - *User: user information if found, nil if no matching user
 //   - error: nil if lookup successful, otherwise contains error details
-func (r *AuthRepository) GetUserByEmail(email string) (*authmodels.User, error) {
+func (r *AuthRepository) GetUserByEmail(email string) (*authmodels.User, *customerror.CustomError) {
 	return r.service.GetUserByEmail(email)
 }
 
 // GetUserByID retrieves a user by their ID using the underlying service.
-func (r *AuthRepository) GetUserByID(id int) (*authmodels.User, error) {
+func (r *AuthRepository) GetUserByID(id int) (*authmodels.User, *customerror.CustomError) {
 	return r.service.GetUserByID(id)
 }
 
 // GetUserByUsername retrieves a user by their username using the underlying service.
-func (r *AuthRepository) GetUserByUsername(username string) (*authmodels.User, error) {
+func (r *AuthRepository) GetUserByUsername(username string) (*authmodels.User, *customerror.CustomError) {
 	return r.service.GetUserByUsername(username)
 }
 
@@ -60,11 +63,11 @@ func (r *AuthRepository) GetUserByUsername(username string) (*authmodels.User, e
 //   - true: username already exists and is not available for use
 //   - false: username doesn't exist and is available for registration
 //   - error: nil if check successful, otherwise contains error details
-func (r *AuthRepository) CheckUsernameExists(username string) (bool, error) {
+func (r *AuthRepository) CheckUsernameExists(username string) (bool, *customerror.CustomError) {
 	return r.service.CheckUsernameExists(username)
 }
 
 // UpdatePassword updates a user's password using the underlying service.
-func (r *AuthRepository) UpdatePassword(userID int, passwordHash string) error {
+func (r *AuthRepository) UpdatePassword(userID int, passwordHash string) *customerror.CustomError {
 	return r.service.UpdatePassword(userID, passwordHash)
 }

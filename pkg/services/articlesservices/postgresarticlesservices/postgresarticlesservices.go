@@ -3,8 +3,11 @@ package postgresarticlesservices
 import (
 	"database/sql"
 	"strings"
+	"time"
 
 	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/models/articlesmodels"
+	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/utils/customerror"
+	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/utils/customerror/postgreserror"
 )
 
 // PostgresArticlesService provides methods to interact with articles table in PostgreSQL database
@@ -22,16 +25,44 @@ func NewPostgresArticlesService(db *sql.DB) *PostgresArticlesService {
 // Returns:
 // - Success: *Article{ID: 1, Title: "Sample Article", Content: "Content here"...}
 // - Error: sql.ErrNoRows if article not found, or any other DB error
-func (r *PostgresArticlesService) GetArticleByID(id int) (*articlesmodels.Article, error) {
+func (r *PostgresArticlesService) GetArticleByID(id int) (*articlesmodels.Article, *customerror.CustomError) {
 	query := "SELECT id, user_id, title, content, created_at, updated_at FROM articles WHERE id = $1"
 	row := r.db.QueryRow(query, id)
 
 	var article articlesmodels.Article
 	if err := row.Scan(&article.ID, &article.UserID, &article.Title, &article.Content, &article.CreatedAt, &article.UpdatedAt); err != nil {
-		return nil, err
+		return nil, postgreserror.NewPostgresError(err)
 	}
 
 	return &article, nil
+}
+
+// GetArticlesByUserID retrieves all articles created by a specific user
+// Query: Selects all articles where user_id matches the specified ID
+// Returns:
+//   - Success: []*Article{
+//     {ID: 1, Title: "Article 1"...},
+//     {ID: 2, Title: "Article 2"...},
+//     }
+//   - Error: Database errors if query fails
+func (r *PostgresArticlesService) GetArticlesByUserID(userID int) ([]*articlesmodels.Article, *customerror.CustomError) {
+	query := "SELECT id, user_id, title, content, created_at, updated_at FROM articles WHERE user_id = $1"
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, postgreserror.NewPostgresError(err)
+	}
+	defer rows.Close()
+
+	var articles []*articlesmodels.Article
+	for rows.Next() {
+		var article articlesmodels.Article
+		if err := rows.Scan(&article.ID, &article.UserID, &article.Title, &article.Content, &article.CreatedAt, &article.UpdatedAt); err != nil {
+			return nil, postgreserror.NewPostgresError(err)
+		}
+		articles = append(articles, &article)
+	}
+
+	return articles, nil
 }
 
 // GetAllArticles retrieves all articles from the database
@@ -42,11 +73,11 @@ func (r *PostgresArticlesService) GetArticleByID(id int) (*articlesmodels.Articl
 //     {ID: 2, Title: "Article 2"...},
 //     }
 //   - Error: Database errors if query fails
-func (r *PostgresArticlesService) GetAllArticles() ([]*articlesmodels.Article, error) {
+func (r *PostgresArticlesService) GetAllArticles() ([]*articlesmodels.Article, *customerror.CustomError) {
 	query := "SELECT id, user_id, title, content, created_at, updated_at FROM articles"
 	rows, err := r.db.Query(query)
 	if err != nil {
-		return nil, err
+		return nil, postgreserror.NewPostgresError(err)
 	}
 	defer rows.Close()
 
@@ -54,7 +85,7 @@ func (r *PostgresArticlesService) GetAllArticles() ([]*articlesmodels.Article, e
 	for rows.Next() {
 		var article articlesmodels.Article
 		if err := rows.Scan(&article.ID, &article.UserID, &article.Title, &article.Content, &article.CreatedAt, &article.UpdatedAt); err != nil {
-			return nil, err
+			return nil, postgreserror.NewPostgresError(err)
 		}
 		articles = append(articles, &article)
 	}
@@ -72,7 +103,7 @@ func (r *PostgresArticlesService) GetAllArticles() ([]*articlesmodels.Article, e
 //   - Success: []*Article matching search terms, ordered by relevance
 //     Example: query="golang" -> [{Title: "Intro to Golang"}, {Title: "Golang Tips"}]
 //   - Error: Database errors or invalid search query
-func (r *PostgresArticlesService) SearchArticles(limit, offset int, query string) ([]*articlesmodels.Article, error) {
+func (r *PostgresArticlesService) SearchArticles(limit, offset int, query string) ([]*articlesmodels.Article, *customerror.CustomError) {
 	// Convert search query to tsquery format and use indonesian dictionary
 	searchQuery := `
         SELECT id, user_id, title, content, created_at, updated_at 
@@ -86,7 +117,7 @@ func (r *PostgresArticlesService) SearchArticles(limit, offset int, query string
 
 	rows, err := r.db.Query(searchQuery, formattedQuery, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, postgreserror.NewPostgresError(err)
 	}
 	defer rows.Close()
 
@@ -94,7 +125,7 @@ func (r *PostgresArticlesService) SearchArticles(limit, offset int, query string
 	for rows.Next() {
 		var article articlesmodels.Article
 		if err := rows.Scan(&article.ID, &article.UserID, &article.Title, &article.Content, &article.CreatedAt, &article.UpdatedAt); err != nil {
-			return nil, err
+			return nil, postgreserror.NewPostgresError(err)
 		}
 		articles = append(articles, &article)
 	}
@@ -102,28 +133,41 @@ func (r *PostgresArticlesService) SearchArticles(limit, offset int, query string
 	return articles, nil
 }
 
-// CreateArticle inserts a new article into the database
-// Query: Inserts article data with user_id, title, content, and timestamps
-// Parameters: article struct with required fields
-// Returns:
-// - Success: nil (article successfully created)
-// - Error: Database constraints violations or connection errors
-func (r *PostgresArticlesService) CreateArticle(article *articlesmodels.Article) error {
+// CreateArticle creates a new article in the database for the specified user.
+// It takes the user ID, title, and content as input parameters and returns
+// a custom error if the operation fails.
+//
+// The article is created with current timestamp for both created_at and updated_at fields.
+//
+// Returns nil on successful creation. If the operation fails due to database constraints
+// or connection issues, returns a wrapped custom error.
+func (r *PostgresArticlesService) CreateArticle(userId int, title string, content string) *customerror.CustomError {
 	query := "INSERT INTO articles (user_id, title, content, created_at, updated_at) VALUES ($1, $2, $3, $4, $5)"
-	_, err := r.db.Exec(query, article.UserID, article.Title, article.Content, article.CreatedAt, article.UpdatedAt)
-	return err
+	_, err := r.db.Exec(query, userId, title, content, time.Now(), time.Now())
+	if err != nil {
+		return postgreserror.NewPostgresError(err)
+	}
+	return nil
 }
 
-// UpdateArticle modifies an existing article in the database
-// Query: Updates all fields except ID for the specified article
-// Parameters: article struct with updated fields
-// Returns:
-// - Success: nil (article successfully updated)
-// - Error: Article not found or database errors
-func (r *PostgresArticlesService) UpdateArticle(article *articlesmodels.Article) error {
-	query := "UPDATE articles SET user_id = $1, title = $2, content = $3, updated_at = $4 WHERE id = $5"
-	_, err := r.db.Exec(query, article.UserID, article.Title, article.Content, article.UpdatedAt, article.ID)
-	return err
+// UpdateArticle updates an existing article in the database with the provided title and content.
+// The article's updated_at timestamp is automatically set to the current time.
+//
+// Parameters:
+//   - articleId: The unique identifier of the article to update
+//   - title: The new title for the article
+//   - content: The new content for the article
+//
+// Returns a *customerror.CustomError which is:
+//   - nil if the update was successful
+//   - wrapped database error if the operation fails or article is not found
+func (r *PostgresArticlesService) UpdateArticle(articleId int, title string, content string) *customerror.CustomError {
+	query := "UPDATE articles SET title = $1, content = $2, updated_at = $3 WHERE id = $4"
+	_, err := r.db.Exec(query, title, content, time.Now(), articleId)
+	if err != nil {
+		return postgreserror.NewPostgresError(err)
+	}
+	return nil
 }
 
 // DeleteArticleByID removes an article from the database
@@ -131,8 +175,12 @@ func (r *PostgresArticlesService) UpdateArticle(article *articlesmodels.Article)
 // Returns:
 // - Success: nil (article successfully deleted)
 // - Error: Article not found or database errors
-func (r *PostgresArticlesService) DeleteArticleByID(id int) error {
+func (r *PostgresArticlesService) DeleteArticleByID(id int) *customerror.CustomError {
 	query := "DELETE FROM articles WHERE id = $1"
 	_, err := r.db.Exec(query, id)
-	return err
+	if err != nil {
+		return postgreserror.NewPostgresError(err)
+
+	}
+	return nil
 }
