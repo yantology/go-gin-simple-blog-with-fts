@@ -2,6 +2,7 @@ package postgresarticlesservices
 
 import (
 	"database/sql"
+	"log"
 	"strings"
 	"time"
 
@@ -103,7 +104,7 @@ func (r *PostgresArticlesService) GetAllArticles() ([]*articlesmodels.Article, *
 //   - Success: []*Article matching search terms, ordered by relevance
 //     Example: query="golang" -> [{Title: "Intro to Golang"}, {Title: "Golang Tips"}]
 //   - Error: Database errors or invalid search query
-func (r *PostgresArticlesService) SearchArticles(limit, offset int, query string) ([]*articlesmodels.Article, *customerror.CustomError) {
+func (r *PostgresArticlesService) SearchArticles(limit int, offset int, query string) ([]*articlesmodels.Article, *customerror.CustomError) {
 	// Convert search query to tsquery format and use indonesian dictionary
 	searchQuery := `
         SELECT id, user_id, title, content, created_at, updated_at 
@@ -122,6 +123,8 @@ func (r *PostgresArticlesService) SearchArticles(limit, offset int, query string
 	defer rows.Close()
 
 	var articles []*articlesmodels.Article
+
+	log.Printf("Search query: %s", formattedQuery)
 	for rows.Next() {
 		var article articlesmodels.Article
 		if err := rows.Scan(&article.ID, &article.UserID, &article.Title, &article.Content, &article.CreatedAt, &article.UpdatedAt); err != nil {

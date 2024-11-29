@@ -1,7 +1,13 @@
 package services
 
 import (
+	"errors"
+	"log"
+	"mime/multipart"
+	"path/filepath"
+
 	"github.com/yantology/go-gin-simple-blog-with-fts/internal/models"
+	"github.com/yantology/go-gin-simple-blog-with-fts/internal/utils"
 	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/repositories/articlesrepository"
 	"github.com/yantology/go-gin-simple-blog-with-fts/pkg/utils/customerror"
 )
@@ -18,6 +24,27 @@ func NewArticlesService(articlesRepo *articlesrepository.ArticlesRepository) *Ar
 
 func (s *ArticlesService) CreateArticle(userId int, req *models.ArticleRequest) *customerror.CustomError {
 	return s.articlesRepo.CreateArticle(userId, req.Title, req.Content)
+}
+
+func (s *ArticlesService) CreateArticlesWithCsv(userId int, file *multipart.FileHeader) *customerror.CustomError {
+	enterFunc := func(title string, url string) *customerror.CustomError {
+		return s.articlesRepo.CreateArticle(userId, title, url)
+	}
+
+	// Validate file extension
+	log.Printf("file.Filename: %s", filepath.Ext(file.Filename))
+	if filepath.Ext(file.Filename) != ".csv" {
+		return customerror.NewCustomError(errors.New("Only CSV files are allowed"), "Only CSV files are allowed", 400)
+	}
+
+	// Process the uploaded file
+
+	cuserr := utils.ProssesCSV(file, enterFunc)
+	if cuserr != nil {
+		return cuserr
+	}
+
+	return nil
 }
 
 func (s *ArticlesService) GetArticleByID(id int) (*models.ArticleResponse, *customerror.CustomError) {

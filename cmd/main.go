@@ -35,33 +35,7 @@ import (
 // @host		localhost:5555
 // @BasePath	/api/v1
 
-//	@securityDefinitions.basic	BasicAuth
-
-// @securityDefinitions.apikey	ApiKeyAuth
-// @in							header
-// @name						Authorization
-// @description				Description for what is this security definition being used
-
-//	@securitydefinitions.oauth2.application	OAuth2Application
-//	@tokenUrl								https://example.com/oauth/token
-//	@scope.write							Grants write access
-//	@scope.admin							Grants read and write access to administrative information
-
-//	@securitydefinitions.oauth2.implicit	OAuth2Implicit
-//	@authorizationUrl						https://example.com/oauth/authorize
-//	@scope.write							Grants write access
-//	@scope.admin							Grants read and write access to administrative information
-
-//	@securitydefinitions.oauth2.password	OAuth2Password
-//	@tokenUrl								https://example.com/oauth/token
-//	@scope.read								Grants read access
-//	@scope.write							Grants write access
-//	@scope.admin							Grants read and write access to administrative information
-
-// @securitydefinitions.oauth2.accessCode	OAuth2AccessCode
-// @tokenUrl								https://example.com/oauth/token
-// @authorizationUrl						https://example.com/oauth/authorize
-// @scope.admin							Grants read and write access to administrative informatio
+// @securityDefinitions.basic	BasicAuth
 func main() {
 	// Load environment variables
 	err := godotenv.Load()
@@ -104,7 +78,7 @@ func main() {
 
 		v1.GET("/users/:id/articles", articlesHandler.GetArticlesByUserID)
 
-		v1.GET("/search", articlesHandler.SearchArticles)
+		v1.GET("/articles/search", articlesHandler.SearchArticles)
 
 		// Protected Routes - Require Authorization Header
 		authMiddleware := middleware.AuthMiddleware(jwtUtil)
@@ -113,6 +87,8 @@ func main() {
 		{
 
 			protected.POST("/articles", articlesHandler.CreateArticle)
+
+			protected.POST("/articles/csv", articlesHandler.CreateArticlesWithCsv)
 
 			protected.PUT("/articles/:id", articlesHandler.UpdateArticle)
 

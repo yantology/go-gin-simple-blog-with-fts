@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -24,10 +25,11 @@ func NewArticlesHandler(articleService *services.ArticlesService) *ArticlesHandl
 // @Description Create a new article
 // @Tags articles
 // @Accept json
+// @Accept x-www-form-urlencoded
 // @Produce json
 // @Param article body models.ArticleRequest false "Article Request"
-// @Param title formData string true "Title"
-// @Param content formData string true "Content"
+// @Param title formData string false "Title"
+// @Param content formData string false "Content"
 // @Success 200 {object} models.Message
 // @Failure 400 {object} models.Message
 // @Failure 401 {object} models.Message
@@ -54,6 +56,42 @@ func (h *ArticlesHandler) CreateArticle(c *gin.Context) {
 		return
 	}
 	c.JSON(200, models.NewMessage("article created successfully"))
+}
+
+// CreateArticlesWithCsv godoc
+// @Summary Create articles with CSV
+// @Description Create multiple articles by uploading a CSV file
+// @Tags articles
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "file"
+// @Success 200 {object} models.Message "articles created successfully"
+// @Failure 400 {object} models.Message "file upload failed"
+// @Failure 401 {object} models.Message "user not authenticated"
+// @Failure 500 {object} models.Message "internal server error"
+// @Router /articles/csv [post]
+// @Security ApiKeyAuth
+func (h *ArticlesHandler) CreateArticlesWithCsv(c *gin.Context) {
+	log.Println("CreateArticlesWithCsv")
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, models.NewMessage("user not authenticated"))
+		return
+	}
+
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewMessage("file upload failed"))
+		return
+	}
+
+	cuserr := h.articleService.CreateArticlesWithCsv(userID.(int), file)
+	if cuserr != nil {
+		c.JSON(cuserr.HTTPCode, models.NewMessage(cuserr.Error()))
+		return
+	}
+
+	c.JSON(200, models.NewMessage("articles created successfully"))
 }
 
 // GetArticleByID retrieves an article by its ID.
@@ -145,6 +183,7 @@ func (h *ArticlesHandler) GetAllArticles(c *gin.Context) {
 // @Failure 500 {object} models.Message
 // @Router /articles/search [get]
 func (h *ArticlesHandler) SearchArticles(c *gin.Context) {
+	log.Println("SearchArticles start")
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	if err != nil {
 		c.JSON(400, models.NewMessage("invalid limit"))
@@ -158,6 +197,7 @@ func (h *ArticlesHandler) SearchArticles(c *gin.Context) {
 	}
 
 	query := c.Query("query")
+	log.Printf("SearchArticles query: %s", query)
 	articles, cuserr := h.articleService.SearchArticles(limit, offset, query)
 	if cuserr != nil {
 		c.JSON(cuserr.HTTPCode, models.NewMessage(cuserr.Error()))

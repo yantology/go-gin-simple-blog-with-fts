@@ -138,6 +138,7 @@ paths:
     post:
       consumes:
       - application/json
+      - application/x-www-form-urlencoded
       description: Create a new article
       parameters:
       - description: Article Request
@@ -148,12 +149,10 @@ paths:
       - description: Title
         in: formData
         name: title
-        required: true
         type: string
       - description: Content
         in: formData
         name: content
-        required: true
         type: string
       produces:
       - application/json
@@ -296,6 +295,41 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update an article
+      tags:
+      - articles
+  /articles/csv:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Create multiple articles by uploading a CSV file
+      parameters:
+      - description: file
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: articles created successfully
+          schema:
+            $ref: '#/definitions/models.Message'
+        "400":
+          description: file upload failed
+          schema:
+            $ref: '#/definitions/models.Message'
+        "401":
+          description: user not authenticated
+          schema:
+            $ref: '#/definitions/models.Message'
+        "500":
+          description: internal server error
+          schema:
+            $ref: '#/definitions/models.Message'
+      security:
+      - ApiKeyAuth: []
+      summary: Create articles with CSV
       tags:
       - articles
   /articles/search:
@@ -581,40 +615,6 @@ paths:
       tags:
       - articles
 securityDefinitions:
-  ApiKeyAuth:
-    description: Description for what is this security definition being used
-    in: header
-    name: Authorization
-    type: apiKey
   BasicAuth:
     type: basic
-  OAuth2AccessCode:
-    authorizationUrl: https://example.com/oauth/authorize
-    flow: accessCode
-    scopes:
-      admin: Grants read and write access to administrative informatio
-    tokenUrl: https://example.com/oauth/token
-    type: oauth2
-  OAuth2Application:
-    flow: application
-    scopes:
-      admin: Grants read and write access to administrative information
-      write: Grants write access
-    tokenUrl: https://example.com/oauth/token
-    type: oauth2
-  OAuth2Implicit:
-    authorizationUrl: https://example.com/oauth/authorize
-    flow: implicit
-    scopes:
-      admin: Grants read and write access to administrative information
-      write: Grants write access
-    type: oauth2
-  OAuth2Password:
-    flow: password
-    scopes:
-      admin: Grants read and write access to administrative information
-      read: Grants read access
-      write: Grants write access
-    tokenUrl: https://example.com/oauth/token
-    type: oauth2
 swagger: "2.0"
